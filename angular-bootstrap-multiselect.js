@@ -120,9 +120,15 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 					for(var i = 0; i < model.length; i++) {
 						var local = {};
 						local[parsedResult.itemName] = model[i];
+						var valueModel;
+						if(valueField!==null && model[i].hasOwnProperty(valueField)){
+							valueModel = model[i][valueField];
+						}else{
+							valueModel = model[i];
+						}
 						scope.items.push({
 							label  : parsedResult.viewMapper(local),
-							model  : model[i],
+							model  : valueModel,
 							checked: false,
 							header : model[i][headerKey],
 							divider : model[i][dividerKey]
