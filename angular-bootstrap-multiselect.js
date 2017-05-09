@@ -35,6 +35,7 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 				var compareByKey = attrs.compareBy;
 				var headerKey = attrs.headerKey;
 				var dividerKey = attrs.dividerKey;
+				var valueField = attrs.valueField;
 				var scrollAfterRows = attrs.scrollAfterRows;
 				var tabindex = attrs.tabindex;
 				var maxWidth = attrs.maxWidth;
@@ -47,6 +48,9 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 				scope.header = "Select";
 				scope.multiple = isMultiple;
 				scope.disabled = false;
+				scope.displayedField = [];
+				scope.modelValue=null;
+				var displayedFieldName = attrs.displayedFieldName;
 
 				scope.ulStyle = {};
 				if(scrollAfterRows !== undefined && parseInt(scrollAfterRows).toString() === scrollAfterRows) {
@@ -121,6 +125,7 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 						var local = {};
 						local[parsedResult.itemName] = model[i];
 						var valueModel;
+						var isChecked = model[i][valueField] === modelCtrl.$modelValue;
 						if(valueField!==null && model[i].hasOwnProperty(valueField)){
 							valueModel = model[i][valueField];
 						}else{
@@ -129,10 +134,11 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 						scope.items.push({
 							label  : parsedResult.viewMapper(local),
 							model  : valueModel,
-							checked: false,
+							checked: isChecked,
 							header : model[i][headerKey],
 							divider : model[i][dividerKey]
 						});
+						getHeaderText();
 					}
 				}
 
@@ -147,16 +153,23 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 					}
 
 					if(isMultiple) {
-						if(attrs.msSelected) {
-							scope.header = $interpolate(attrs.msSelected)(scope);
-						} else {
-							scope.header = modelCtrl.$modelValue.length + " " + "selectionnés";
+						var model = parsedResult.source(originalScope);
+						var header = [];
+						for(var ii in model){
+							if(modelCtrl.$modelValue.indexOf(model[ii][valueField])>=0){
+								header.push(model[ii].nom);
+							}
 						}
-
+						scope.header=header.toString();
 					} else {
 						var local = {};
 						local[parsedResult.itemName] = modelCtrl.$modelValue;
-						scope.header = parsedResult.viewMapper(local);
+						var model = parsedResult.source(originalScope);
+						for(var ii in model){
+							if(model[ii][valueField]===modelCtrl.$modelValue){
+								scope.header=model[ii].nom;
+							}
+						}
 					}
 				}
 
@@ -205,11 +218,12 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 
 				function setModelValue(isMultiple) {
 					var value;
-
+					var labels = [];
 					if(isMultiple) {
 						value = [];
 						angular.forEach(scope.items, function(item) {
 							if(item.checked) {
+								labels.push(item[displayedFieldName]);
 								value.push(item.model);
 							}
 						});
@@ -217,10 +231,12 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 						angular.forEach(scope.items, function(item) {
 							if(item.checked) {
 								value = item.model;
+								labels.push(item[displayedFieldName]);
 								return false;
 							}
 						});
 					}
+					scope.displayedField=labels.toString();
 					modelCtrl.$setViewValue(value);
 				}
 
@@ -299,9 +315,6 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 					}
 				};
 
-				//				$("ul.dropdown-menu").on("click", "[data-stopPropagation]", function(e) {
-				//					e.stopPropagation();
-				//				});
 
 				function clickHandler(event) {
 					if(elementMatchesAnyInArray(event.target, element.find(event.target.tagName))) {
