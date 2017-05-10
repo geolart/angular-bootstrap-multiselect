@@ -157,7 +157,7 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 						var header = [];
 						for(var ii in model){
 							if(modelCtrl.$modelValue.indexOf(model[ii][valueField])>=0){
-								header.push(model[ii].nom);
+								header.push(model[ii][displayedFieldName]);
 							}
 						}
 						scope.header=header.toString();
