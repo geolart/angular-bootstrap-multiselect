@@ -1,10 +1,12 @@
 "use strict";
-
+console.log("TEST");
 angular.module("ui.multiselect", ["multiselect.tpl.html"])
 	//from bootstrap-ui typeahead parser
 	.factory("optionParser", ["$parse", function($parse) {
 		//                      00000111000000000000022200000000000000003333333333333330000000000044000
 		var TYPEAHEAD_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+(.*)$/;
+
+		console.log("FACTORY");
 
 		return {
 			parse: function(input) {
@@ -28,7 +30,7 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 			restrict: "E",
 			require : "ngModel",
 			link    : function(originalScope, element, attrs, modelCtrl) {
-
+				console.log("link");
 				var exp = attrs.options;
 				var parsedResult = optionParser.parse(exp);
 				var isMultiple = attrs.multiple ? true : false;
@@ -108,11 +110,12 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 					//for preselected list then we need to mark checked in our scope item. But we don't want to do this every time
 					//model changes. We need to do this only if it is done outside directive scope, from controller, for example.
 					if(angular.isDefined(newVal)) {
+						console.log(newVal);
 						markChecked(newVal);
 						scope.$eval(changeHandler);
 					}
 					getHeaderText();
-					modelCtrl.$setValidity("required", scope.valid());
+					//modelCtrl.$setValidity("required", scope.valid());
 				});
 
 				function parseModel() {
@@ -125,12 +128,24 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 						var local = {};
 						local[parsedResult.itemName] = model[i];
 						var valueModel;
-						var isChecked = model[i][valueField] === modelCtrl.$modelValue;
+						//var isChecked = model[i][valueField] === modelCtrl.$modelValue;
+						var isChecked=false;
+
+						if (typeof modelCtrl.$modelValue !== 'undefined' &  modelCtrl.$modelValue!==null){
+							for(var y in modelCtrl.$modelValue){
+								if(modelCtrl.$modelValue[y][valueField] == model[i][valueField]){
+									isChecked=true;
+									valueModel = model[i][valueField];
+								}
+							}
+						}
+
 						if(valueField!==null && model[i].hasOwnProperty(valueField)){
 							valueModel = model[i][valueField];
 						}else{
 							valueModel = model[i];
 						}
+
 						scope.items.push({
 							label  : parsedResult.viewMapper(local),
 							model  : valueModel,
@@ -151,14 +166,27 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 						scope.header = attrs.msHeader || "Select";
 						return scope.header;
 					}
-
 					if(isMultiple) {
 						var model = parsedResult.source(originalScope);
 						var header = [];
 						for(var ii in model){
-							if(modelCtrl.$modelValue.indexOf(model[ii][valueField])>=0){
-								header.push(model[ii][displayedFieldName]);
+							//Et si modelCtrl.$modelValue.length=0 ??
+							if(valueField!==null && modelCtrl.$modelValue[0].hasOwnProperty(valueField)){
+								//Le modèle est un tableau d'objets qui associe à valueField, une valeur.
+								for(var yy in modelCtrl.$modelValue){
+									if(modelCtrl.$modelValue[yy][valueField] == model[ii][valueField]){
+										header.push(model[ii][displayedFieldName]);
+									}
+								}
+							}else{
+								//Le modèle est un tableau qui contient directement les valeurs.
+								for(var yy in modelCtrl.$modelValue){
+									if(modelCtrl.$modelValue[yy] == model[ii][valueField]){
+										header.push(model[ii][displayedFieldName]);
+									}
+								}
 							}
+
 						}
 						scope.header=header.toString();
 					} else {
@@ -241,6 +269,7 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 				}
 
 				function markChecked(newVal) {
+					console.log(angular.isArray(newVal));
 					if(!angular.isArray(newVal)) {
 						angular.forEach(scope.items, function(item) {
 							item.checked = false;
@@ -251,9 +280,12 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 							}
 						});
 					} else {
+						console.log(scope.items);
 						angular.forEach(scope.items, function(item) {
+							console.log(item);
 							item.checked = false;
 							angular.forEach(newVal, function(i) {
+								console.log(i);
 								if(compareByKey === undefined && angular.equals(item.model, i)) {
 									item.checked = true;
 								} else if(compareByKey !== undefined && item.model[compareByKey] !== undefined && angular.equals(item.model[compareByKey], i[compareByKey])) {
@@ -339,7 +371,7 @@ angular.module("ui.multiselect", ["multiselect.tpl.html"])
 
 angular.module("multiselect.tpl.html", []).run(["$templateCache", function($templateCache) {
 	$templateCache.put("multiselect.tpl.html",
-			"<div class=\"btn-group\">\n" +
+			"<div style=\"width:100%\" class=\"btn-group\">\n" +
 			"  <button tabindex=\"{{tabindex}}\" title=\"{{header}}\" type=\"button\" class=\"btn btn-default dropdown-toggle\" ng-click=\"toggleSelect()\" ng-disabled=\"disabled\" ng-class=\"{'error': !valid()}\">\n" +
 			"    <div ng-style=\"maxWidth\" style=\"padding-right: 13px; overflow: hidden; text-overflow: ellipsis;\">{{header}}</div><span class=\"caret\" style=\"position:absolute;right:10px;top:14px;\"></span>\n" +
 			"  </button>\n" +
