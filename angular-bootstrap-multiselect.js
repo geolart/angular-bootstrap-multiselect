@@ -1,4 +1,5 @@
 "use strict";
+//geolart
 angular.module("ui.multiselect", ["multiselect.tpl.html"])
 	//from bootstrap-ui typeahead parser
 	.factory("optionParser", ["$parse", function($parse) {
